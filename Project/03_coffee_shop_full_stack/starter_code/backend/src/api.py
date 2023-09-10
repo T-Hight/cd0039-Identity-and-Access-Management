@@ -33,16 +33,16 @@ def get_drinks():
     try:
         drinks = Drink.query.all()
         for drink in drinks:
-            result = drink.short()
+            drink = drink.short()
 
-        if len(result) == 0:
+        if len(drink) == 0:
             abort(404)
 
         else:
             return jsonify(
                 {
                     "success": True,
-                    "drinks": result 
+                    "drinks": drink
                 }
             )
         
@@ -62,16 +62,16 @@ def get_drinks_detail():
     try:
         drinks = Drink.query.all()
         for drink in drinks:
-            result = drink.long()
+            drink = drink.long()
 
-        if len(result) == 0:
+        if len(drink) == 0:
             abort(404)
 
         else:
             return jsonify(
                 {
                     "success": True,
-                    "drinks": result 
+                    "drinks": drink 
                 }
             )
         
@@ -93,24 +93,27 @@ def get_drinks_detail():
 
 def post_drink(jwt):
 
-    data = request.get_json()
-    
-    if 'title' and 'recipe' not in data:
+    body = request.get_json()
+
+    title = body.get('title')
+    recipe = body.get('recipe')
+
+    if len(title) == 0 or len(recipe) == 0:
         abort(422)
-
-    title = data['title']
-    recipe_json = json.dumps(data['recipe'])
-
-    drink = Drink(title=title, recipe=recipe_json)
-
-    drink.insert()
+    
+    try:
+        drink = Drink(
+            title=title,
+            recipe=json.dumps(recipe)
+        )
+        drink.insert()
+    except:
+        abort(400)
 
     return jsonify({
         'success': True,
-        'drinks': [drink.long()]
+        'drinks': [drink.long()] 
     })
-
-
 '''
 @TODO implement endpoint
     PATCH /drinks/<id>
