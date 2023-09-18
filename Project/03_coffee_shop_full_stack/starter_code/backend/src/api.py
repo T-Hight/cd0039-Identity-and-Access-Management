@@ -32,21 +32,16 @@ db_drop_and_create_all()
 def get_drinks():
     try:
         drinks = Drink.query.all()
-        for drink in drinks:
-            drink = drink.short()
-
-        if len(drink) == 0:
-            abort(404)
-
-        else:
-            return jsonify(
-                {
-                    "success": True,
-                    "drinks": drink
-                }
-            )
-        
-    except:
+        return jsonify(
+            {
+                "success": True,
+                "drinks": [drink.short() for drink in drinks]
+            }
+        ), 200
+    
+    except Exception as e:
+        print('debug')
+        print(e)
         abort(422)
 
 '''
@@ -58,25 +53,23 @@ def get_drinks():
         or appropriate status code indicating reason for failure
 '''
 @app.route('/drinks-detail')
-def get_drinks_detail():
+
+@requires_auth('get:drinks-detail')
+
+def get_drinks_detail(payload):
     try:
         drinks = Drink.query.all()
         
-        for drink in drinks:
-            drink = drink.long()
-
-        if len(drink) == 0:
-            abort(404)
-
-        else:
-            return jsonify(
-                {
-                    "success": True,
-                    "drinks": drink 
-                }
-            )
+        return jsonify(
+            {
+                "success": True,
+                "drinks": [drink.long() for drink in drinks]
+            }
+        ), 200
         
-    except:
+    except Exception as e:
+        print('debug')
+        print(e)
         abort(422)
 
 '''
@@ -92,7 +85,7 @@ def get_drinks_detail():
 
 @requires_auth('post:drinks')
 
-def post_drink(jwt):
+def post_drink(payload):
 
     body = request.get_json()
 
@@ -115,7 +108,9 @@ def post_drink(jwt):
             'drinks': [drink.long()] 
         }), 200
 
-    except:
+    except Exception as e:
+        print('debug')
+        print(e)
         abort(422)
 '''
 @TODO implement endpoint
@@ -132,7 +127,7 @@ def post_drink(jwt):
 
 @requires_auth('patch:drinks')
 
-def patch_drink(jwt, id):
+def patch_drink(payload, id):
 
     drink = Drink.query.get(id)
 
@@ -159,7 +154,9 @@ def patch_drink(jwt, id):
                 "drinks": [drink.long()]
             }
         ), 200
-    except:
+    except Exception as e:
+        print('debug')
+        print(e)
         abort(422)
 
 '''
@@ -176,22 +173,25 @@ def patch_drink(jwt, id):
 
 @requires_auth('delete:drinks')
 
-def delete_drink(jwt, id):
+def delete_drink(payload, id):
+    try:
+        drink = Drink.query.get(id)
 
-    drink = Drink.query.get(id)
+        if drink:
+            drink.delete()
 
-    if drink:
-        drink.delete()
-
-        return jsonify(
-            {
-                "success": True,
-                "delete": id
-            }
-        ), 200
-    else:
-        abort(404)
-
+            return jsonify(
+                {
+                    "success": True,
+                    "delete": id
+                }
+            ), 200
+        else:
+            abort(404)
+    except Exception as e:
+        print('debug')
+        print(e)
+        abort(422)
 # Error Handling
 '''
 Example error handling for unprocessable entity
@@ -238,3 +238,4 @@ def unauthorized(error):
         "error": 401,
         "message": "unauthorized"
     }), 401
+
